@@ -23,7 +23,7 @@ while True:
     if frame_count > 119:
         frame_count = 1
     background.move()
-    player.player_run(frame_count)
+    player.run(frame_count)
     pygame.display.update()
     frame_count += 1
     clock.tick(120)
