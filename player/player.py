@@ -1,6 +1,5 @@
 import pygame
 
-
 class Player:
     player_run_animation = [
         pygame.transform.scale2x(pygame.image.load(
