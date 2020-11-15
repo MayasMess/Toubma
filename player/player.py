@@ -1,4 +1,18 @@
 import pygame
+from enum import Enum
+
+
+class PlayerActions(Enum):
+    NONE = 0
+    JUMP = 1,
+    DOUBLE_JUMP = 2,
+
+
+class PlayerMovements(Enum):
+    NONE = 3
+    RUN = 1,
+    MOVE_FORWARD = 2,
+    MOVE_BACKWARD = 3,
 
 
 class Player:
@@ -39,7 +53,7 @@ class Player:
             'player/assets/Adventurer-1.5/Individual Sprites/adventurer-smrslt-03.png').convert_alpha()),
     ]
 
-    jump_height = 2
+    jump_height = 1
 
     def __init__(self, screen, screen_width, screen_heigth):
         self.screen = screen
@@ -60,69 +74,76 @@ class Player:
 
         self.double_jump_frame_count = 0
         self.double_jumping = False
-        self.double_jump_descending = False
+        self.descending = False
 
     def init(self):
         self.moving_forward = False
         self.moving_backward = False
+        self.jumping = False
+        self.double_jumping = False
 
-    def animate(self, keys, frame_count):
-        self.init()
-        if keys:
-            if keys[pygame.K_SPACE]:
-                if not self.jumping:
-                    self.jumping = True
-                    self.double_jumping = False
-                else:
-                    self.double_jumping = True
-                    self.jumping = False
-                    self.jump_frame_count = 0
-            if keys[pygame.K_RIGHT]:
-                self.moving_forward = True
-            if keys[pygame.K_LEFT]:
-                self.moving_backward = True
+    def animate(self, action, mouvement, frame_count):
+        if action == PlayerMovements.RUN:
+            self.run(frame_count=frame_count, mouvement=mouvement)
+        if action == PlayerActions.JUMP:
+            if not self.jumping:
+                self.jumping = True
+            else:
+                self.descending = False
+                self.double_jumping = True
+
+        if mouvement == PlayerMovements.MOVE_FORWARD:
+            self.move_forward()
+        if mouvement == PlayerMovements.MOVE_BACKWARD:
+            self.move_backward()
+
         if self.double_jumping:
             self.double_jump()
         elif self.jumping:
             self.jump()
-        elif self.moving_forward:
-            self.move_forward(frame_count=frame_count)
-        elif self.moving_backward:
-            self.move_backward(frame_count=frame_count)
         else:
-            self.run(frame_count=frame_count)
+            self.run(frame_count=frame_count, mouvement=mouvement)
 
-    def move_forward(self, frame_count):
-        if frame_count > 59:
-            frame_count -= 60
-        animation_index = (frame_count // (60 // len(self.player_run_animation)))
+    def move_forward(self):
         if self.player_pos_x < self.screen_width:
             self.player_pos_x += 1
-        self.screen.blit(self.player_run_animation[animation_index],
-                         (self.player_pos_x, self.player_base_pos_y))
 
-    def move_backward(self, frame_count):
-        if frame_count < 59:
-            frame_count += 60
-        animation_index = ((frame_count) // (240 // len(self.player_run_animation)))
+    def move_backward(self):
         if self.player_pos_x > 0:
             self.player_pos_x -= 1
-        self.screen.blit(self.player_run_animation[animation_index],
-                         (self.player_pos_x, self.player_base_pos_y))
 
-    def run(self, frame_count):
-        self.screen.blit(self.player_run_animation[frame_count // (120 // len(self.player_run_animation))],
-                         (self.player_pos_x, self.player_base_pos_y))
+    def run(self, frame_count, mouvement):
+        if mouvement == PlayerMovements.MOVE_FORWARD:
+            if frame_count > 59:
+                frame_count -= 60
+            animation_index = (frame_count // (60 // len(self.player_run_animation)))
+        elif mouvement == PlayerMovements.MOVE_BACKWARD:
+            if frame_count < 59:
+                frame_count += 60
+            animation_index = (frame_count // (240 // len(self.player_run_animation)))
+        else:
+            animation_index = frame_count // (120 // len(self.player_run_animation))
+        self.screen.blit(self.player_run_animation[animation_index],
+                         (self.player_pos_x, self.player_pos_y))
 
     def jump(self):
         self.jump_frame_count += 1
         if self.jump_frame_count > 119:
-            self.jumping = False
             self.jump_frame_count = 1
-        animation_index = self.jump_frame_count // (120 // len(self.player_jump_animation))
-        if animation_index == 0 | animation_index == 1:
+        if self.jump_frame_count > 59:
+            self.descending = True
+        if self.player_pos_y == self.player_base_pos_y:
+            self.double_jumping = False
+            self.jump_frame_count = 0
+            self.jumping = False
+            self.jump_frame_count = 0
+            self.descending = False
+        # animation_index = self.jump_frame_count // (120 // len(self.player_jump_animation))
+        if self.descending:
+            self.player_pos_y += self.jump_height
+        elif self.jump_frame_count < 60:
             self.player_pos_y -= self.jump_height
-        elif animation_index == 2 | animation_index == 3:
+        else:
             self.player_pos_y += self.jump_height
 
         self.screen.blit(self.player_jump_animation[self.jump_frame_count // (120 // len(self.player_jump_animation))],
@@ -133,20 +154,20 @@ class Player:
         if self.double_jump_frame_count > 119:
             self.double_jump_frame_count = 1
         if self.double_jump_frame_count > 59:
-            self.double_jump_descending = True
+            self.descending = True
         if self.player_pos_y == self.player_base_pos_y:
             self.double_jumping = False
             self.double_jump_frame_count = 0
             self.jumping = False
             self.jump_frame_count = 0
-            self.double_jump_descending = False
-        animation_index = self.double_jump_frame_count // (120 // len(self.player_double_jump_animation))
-        if self.double_jump_descending:
+            self.descending = False
+        # animation_index = self.double_jump_frame_count // (120 // len(self.player_double_jump_animation))
+        if self.descending:
             self.player_pos_y += self.jump_height
-        elif animation_index == 2 | animation_index == 3:
-            self.player_pos_y += self.jump_height
-        elif animation_index == 0 | animation_index == 1:
+        elif self.double_jump_frame_count < 60:
             self.player_pos_y -= self.jump_height
+        else:
+            self.player_pos_y += self.jump_height
 
         self.screen.blit(self.player_double_jump_animation[
                              self.double_jump_frame_count // (120 // len(self.player_double_jump_animation))],
