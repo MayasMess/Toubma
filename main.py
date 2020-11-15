@@ -26,7 +26,7 @@ while True:
             sys.exit()
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RIGHT:
-                dialog.dialog_count += 1
+                dialog.go_to_next_step()
     if frame_count > 119:
         frame_count = 1
 
