@@ -9,6 +9,8 @@ screen_height = 448
 screen = pygame.display.set_mode((screen_width, screen_height))
 from player.player import Player
 from dialogs.dialogs import Dialogs
+from  player.player import PlayerMovements
+from  player.player import PlayerActions
 
 clock = pygame.time.Clock()
 white = (255, 255, 255)
@@ -18,20 +20,39 @@ player = Player(screen=screen, screen_width=screen_width, screen_heigth=screen_h
 dialog = Dialogs(screen=screen)
 
 test_dialg = None
+keys = []
+action = PlayerMovements.RUN
+mouvement = PlayerActions.NONE
+pygame.key.set_repeat(0)
 while True:
     keys = pygame.key.get_pressed()
+    key_down = False
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_RIGHT:
+            if event.key == pygame.K_n:
                 dialog.go_to_next_step()
+            key_down = True
+
     if frame_count > 119:
         frame_count = 1
 
+    mouvement = PlayerMovements.NONE
+    action = PlayerActions.NONE
+
+    if key_down:
+        if pygame.key.get_pressed()[pygame.K_SPACE]:
+            action = PlayerActions.JUMP
+
+    if pygame.key.get_pressed()[pygame.K_RIGHT]:
+        mouvement = PlayerMovements.MOVE_FORWARD
+
+    if pygame.key.get_pressed()[pygame.K_LEFT]:
+        mouvement = PlayerMovements.MOVE_BACKWARD
+
     background.move()
-    player.run(frame_count)
 
     if keys[pygame.K_h]:
         test_dialg = True
@@ -42,6 +63,7 @@ while True:
 
     print(dialog.dialog_count)
 
+    player.animate(action=action, mouvement=mouvement, frame_count=frame_count)
     pygame.display.update()
     frame_count += 1
     clock.tick(120)
